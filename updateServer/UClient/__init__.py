@@ -58,11 +58,8 @@ class UpdateFiles():
             print('+++++++++++++++++++++++++')
 
             try:
-                if not os.path.exists(file_dir):
-                    os.mkdir(newpath)
-                    request.urlretrieve(checkurl + '/' + key, file_dir)
-                else:
-                    request.urlretrieve(checkurl + '/' + key, file_dir)
+                os.mkdir(newpath)
+                request.urlretrieve(checkurl + '/' + key, file_dir)
             except Exception as e:
                 print(e)
                 request.urlretrieve(checkurl + '/' + key, file_dir)
