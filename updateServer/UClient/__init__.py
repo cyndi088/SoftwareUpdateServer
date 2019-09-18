@@ -6,6 +6,7 @@ from PyQt5 import QtWidgets
 from urllib3 import request
 from urllib import request
 import os
+import shutil
 
 from updateServer.UClient.sample import Ui_MainWindow
 
@@ -23,7 +24,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.textBrowser.clear()
         self.updateList = self.updateServer.check_update()
         for j in self.updateList:
-            print(j)
             self.textBrowser.append(j)
 
     def updateNow(self):
@@ -36,16 +36,16 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             self.repaint()
 
 
-class UpdateFiles():
+class UpdateFiles(object):
     def __init__(self):
         self.server = '127.0.0.1'
         self.port = '1213'
         self.directory = os.getcwd()
+        self.client = '/updateFiles/'
 
     def downloadFiles(self, key):
         checkurl = 'http://' + self.server + ':' + self.port
-        file_dir = self.directory + '/' + key
-        # file_dir = file_dir.replace('/', '\\')
+        file_dir = self.directory + self.client + key
         if os.path.exists(file_dir):
             os.remove(file_dir)
             request.urlretrieve(checkurl + '/' + key, file_dir)
@@ -58,13 +58,16 @@ class UpdateFiles():
             print('+++++++++++++++++++++++++')
 
             try:
-                os.mkdir(newpath)
+                if not os.path.isdir(newpath):
+                    os.makedirs(newpath)
                 request.urlretrieve(checkurl + '/' + key, file_dir)
             except Exception as e:
+                print('eeeeeeeeeeeeeeeeeeeee')
                 print(e)
+                print('eeeeeeeeeeeeeeeeeeeee')
                 request.urlretrieve(checkurl + '/' + key, file_dir)
 
-    def Getfile_md5(self, filename):
+    def get_file_md5(self, filename):
         if not os.path.isfile(filename):
             return
         myHash = hashlib.md5()
@@ -77,27 +80,46 @@ class UpdateFiles():
         f.close()
         return myHash.hexdigest()
 
+    def clear_up(self):
+        delDir = self.directory + self.client
+        delList = os.listdir(delDir)
+        for f in delList:
+            filePath = os.path.join(delDir, f)
+            if os.path.isfile(filePath):
+                os.remove(filePath)
+            elif os.path.isdir(filePath):
+                shutil.rmtree(filePath, True)
+
     def check_update(self):
+        self.clear_up()
         updateList = []
         checkurl = 'http://' + self.server + ':' + self.port
         request.urlretrieve(checkurl + '/.listFile', ".listFile")
 
         with open(".listFile", "rb") as f:
             data = pickle.load(f)
-        print(data)
+        num = 1
         for key in data:
             # 服务端文件的md5
-            new_md5 = data[key]
-            file_dir = self.directory + '/' + key
-            if os.path.exists(file_dir):
+            print('*' * num)
+            print(key)
+            server_md5 = data[key]
+            client_file_dir = self.directory + self.client + key
+            # 如果文件存在于客户端
+            if os.path.exists(client_file_dir):
                 # 客户端文件的md5
-                oldmd5 = self.Getfile_md5(file_dir)
-                if oldmd5 != new_md5:
-                    print(new_md5, "准备下载")
+                client_md5 = self.get_file_md5(client_file_dir)
+                # 判断客户端与服务器是否一致
+                if client_md5 != server_md5:
+                    print(server_md5, ".listFile不一致，需要准备下载")
+                    # 若不一致则加入updateList
                     updateList.append(key)
             else:
+                # 如果文件不存在于客户端
                 updateList.append(key)
-                print('准备下载', file_dir)
+                print('准备下载', client_file_dir)
+            print('*' * num)
+            num += 1
         return updateList
 
 

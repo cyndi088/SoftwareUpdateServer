@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
-import pickle
-from flask import request, jsonify, send_from_directory, abort, Flask, redirect, url_for
 import os
-import hashlib
 import json
+import pickle
+import hashlib
+from flask import request, jsonify, send_from_directory, abort, Flask
+
 
 app = Flask(__name__)
 app.config['JSON_AS_ASCII'] = False
@@ -24,7 +25,7 @@ def download(filename):
 
 
 # 计算文件MD5
-def Getfile_md5(filename):
+def get_file_md5(filename):
     if not os.path.isfile(filename):
         return
     myHash = hashlib.md5()
@@ -49,6 +50,7 @@ def generate():
     return_data = {
         'Statu': 'success',
     }
+    updateList.clear()
     return jsonify(return_data)
     # file_md5_list=json.load(updateList)
 
@@ -58,12 +60,16 @@ def findFile(path):
     fsinfo = os.listdir(path)
     for fn in fsinfo:
         temp_path = os.path.join(path, fn)
+        # 如果该路径不是目录（即文件），则加入updateList
         if not os.path.isdir(temp_path):
             print('文件路径: {}'.format(temp_path))
-            fm = Getfile_md5(temp_path)
+            # 获取文件的md5
+            fm = get_file_md5(temp_path)
             print(fn)
+            # 获取文件的文件名
             fn = temp_path.replace(directory + "/updateFiles/", '')
             updateList[fn] = fm
+        # 如果该路径是目录，则递归寻找
         else:
             findFile(temp_path)
 
