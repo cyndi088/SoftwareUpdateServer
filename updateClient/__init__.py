@@ -8,7 +8,7 @@ from urllib import request
 import os
 import shutil
 
-from updateServer.UClient.sample import Ui_MainWindow
+from updateClient.sample import Ui_MainWindow
 
 
 class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
@@ -82,6 +82,8 @@ class UpdateFiles(object):
 
     def clear_up(self):
         delDir = self.directory + self.client
+        if not os.path.exists(delDir):
+            return
         delList = os.listdir(delDir)
         for f in delList:
             filePath = os.path.join(delDir, f)
